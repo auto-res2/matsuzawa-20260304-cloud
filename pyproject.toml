@@ -16,3 +16,15 @@ dependencies = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+# [VALIDATOR FIX - Attempt 1]
+# [PROBLEM]: hatchling cannot find files to ship - "Unable to determine which files to ship inside the wheel"
+# [CAUSE]: No directory named 'jam_cot_experiment' exists, and no explicit packages configuration provided
+# [FIX]: Added tool.hatch.build.targets.wheel.packages to point to src/ directory
+#
+# [OLD CODE]:
+# (no hatch configuration was present)
+#
+# [NEW CODE]:
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
