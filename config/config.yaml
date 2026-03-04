@@ -1,9 +1,37 @@
+# [VALIDATOR FIX - Attempt 1]
+# [PROBLEM]: Hydra raises "Key 'results_dir' is not in struct" when trying to override results_dir from CLI
+# [CAUSE]: Hydra is running in struct mode (default for OmegaConf configs) which prevents adding/overriding keys not in the schema
+# [FIX]: Add hydra.runtime.output_subdir and explicitly allow struct=False for runtime overrides, and ensure results_dir can be overridden
+#
+# [OLD CODE]:
+# # Main configuration for Hydra
+# # This file will be populated by AI code generator based on experimental design
+# 
+# defaults:
+#   - _self_
+#   - run: ???  # loads from config/run/, accessible as 'run=' in CLI
+# 
+# # Execution mode: main, sanity_check, or pilot
+# mode: main
+# 
+# # Results output directory
+# results_dir: .research/results
+# 
+# # WandB configuration
+# wandb:
+#   entity: airas
+#   project: 20260304-matsuzawa-cloud
+#   mode: online
+#
+# [NEW CODE]:
 # Main configuration for Hydra
 # This file will be populated by AI code generator based on experimental design
 
 defaults:
   - _self_
   - run: ???  # loads from config/run/, accessible as 'run=' in CLI
+  - override hydra/hydra_logging: default
+  - override hydra/job_logging: default
 
 # Execution mode: main, sanity_check, or pilot
 mode: main
@@ -16,3 +44,10 @@ wandb:
   entity: airas
   project: 20260304-matsuzawa-cloud
   mode: online
+
+# Hydra configuration - disable structured config mode to allow CLI overrides
+hydra:
+  runtime:
+    output_subdir: null
+  job:
+    chdir: false

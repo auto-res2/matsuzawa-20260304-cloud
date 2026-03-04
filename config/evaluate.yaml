@@ -1,0 +1,17 @@
+# Configuration for evaluate.py
+# Minimal config that accepts results_dir and run_ids from CLI
+
+# Default values
+results_dir: .research/results
+run_ids: "[]"
+
+# WandB configuration (can be overridden)
+wandb_entity: airas
+wandb_project: 20260304-matsuzawa-cloud
+
+# Hydra configuration
+hydra:
+  runtime:
+    output_subdir: null
+  job:
+    chdir: false

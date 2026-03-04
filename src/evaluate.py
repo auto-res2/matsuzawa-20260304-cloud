@@ -21,7 +21,7 @@ import os
 import sys
 import json
 import hydra
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from typing import List, Dict, Any
 import wandb
 import matplotlib
@@ -306,9 +306,22 @@ def compute_aggregated_metrics(all_run_data: List[Dict]) -> Dict[str, Any]:
     return aggregated
 
 
-@hydra.main(version_base=None, config_path=None)
+# [VALIDATOR FIX - Attempt 2]
+# [PROBLEM]: Hydra raises "Key 'results_dir' is not in struct" error when passing results_dir=... with config_path=None
+# [CAUSE]: With config_path=None, Hydra has no base config. When CLI args are passed as overrides (not +overrides),
+#          Hydra runs in struct mode and rejects unknown keys. Also, using main config requires 'run' which evaluate doesn't need.
+# [FIX]: Create a dedicated evaluate.yaml config file with results_dir and run_ids predefined,
+#        so Hydra can process CLI overrides without struct mode errors
+#
+# [OLD CODE]:
+# @hydra.main(version_base=None, config_path=None)
+# def main(cfg: DictConfig):
+#
+# [NEW CODE]:
+@hydra.main(version_base=None, config_path="../config", config_name="evaluate")
 def main(cfg: DictConfig):
     """Main evaluation entry point."""
+
     # Extract parameters from config or use defaults
     results_dir = cfg.get("results_dir", ".research/results")
     run_ids_str = cfg.get("run_ids", "[]")
