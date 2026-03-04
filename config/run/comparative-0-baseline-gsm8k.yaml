@@ -1,0 +1,23 @@
+# Baseline: Standard CoT on GSM8K
+run_id: comparative-0-baseline-gsm8k
+
+method:
+  name: Standard-CoT
+  type: comparative
+  description: "Standard Chain-of-Thought prompting (Let's think step by step)"
+
+model:
+  name: gpt-4o-mini
+  provider: openai
+  temperature: 0.0
+  max_tokens: 2048
+
+dataset:
+  name: gsm8k
+  split: test
+  num_samples: 200  # full run
+  num_samples_sanity: 10  # sanity check
+
+inference:
+  batch_size: 1
+  cache_responses: true

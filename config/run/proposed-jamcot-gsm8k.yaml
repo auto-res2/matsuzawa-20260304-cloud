@@ -1,0 +1,23 @@
+# Proposed: JAM-CoT on GSM8K
+run_id: proposed-jamcot-gsm8k
+
+method:
+  name: JAM-CoT
+  type: proposed
+  description: "Justification-checked Adaptive Minimal CoT with operation-typed steps, auto-checkable arithmetic ledger, and adaptive budget"
+
+model:
+  name: gpt-4o-mini
+  provider: openai
+  temperature: 0.0
+  max_tokens: 2048
+
+dataset:
+  name: gsm8k
+  split: test
+  num_samples: 200  # full run
+  num_samples_sanity: 10  # sanity check
+
+inference:
+  batch_size: 1
+  cache_responses: true
