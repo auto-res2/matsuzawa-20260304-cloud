@@ -107,6 +107,43 @@ def extract_final_answer(response: str, method_name: str) -> float:
     return float("nan")
 
 
+# [VALIDATOR FIX - Attempt 1]
+# [PROBLEM]: All arithmetic steps marked as invalid (faithfulness_rate=0.0)
+# [CAUSE]: Original verifier only accepted equations with exactly 2 parts when split by '=',
+#          but model outputs multi-part equations like "a = expr = value" (3+ parts).
+#          Also, verifier only checked for presence of numbers, not correctness.
+# [FIX]: Accept equations with 2+ parts, extract rightmost value as expected result,
+#        evaluate arithmetic expression(s) safely, and compare computed vs expected.
+#
+# [OLD CODE]:
+# def verify_arithmetic_steps(response: str) -> Dict[str, Any]:
+#     arith_lines = re.findall(r"\[ARITH\](.+?)(?=\n|$)", response)
+#     total_steps = len(arith_lines)
+#     valid_steps = 0
+#     invalid_steps = 0
+#     for line in arith_lines:
+#         line = line.strip()
+#         if "=" in line:
+#             try:
+#                 parts = line.split("=")
+#                 if len(parts) == 2:  # <-- This rejects multi-part equations
+#                     lhs = parts[0].strip()
+#                     rhs = parts[1].strip()
+#                     lhs_nums = re.findall(r"[0-9.]+", lhs)
+#                     rhs_nums = re.findall(r"[0-9.]+", rhs)
+#                     if lhs_nums and rhs_nums:  # <-- Only checks presence, not correctness
+#                         valid_steps += 1
+#                     else:
+#                         invalid_steps += 1
+#                 else:
+#                     invalid_steps += 1
+#             except Exception:
+#                 invalid_steps += 1
+#         else:
+#             invalid_steps += 1
+#     return {...}
+#
+# [NEW CODE]:
 def verify_arithmetic_steps(response: str) -> Dict[str, Any]:
     """
     Verify arithmetic steps in JAM-CoT response.
@@ -130,23 +167,61 @@ def verify_arithmetic_steps(response: str) -> Dict[str, Any]:
             try:
                 # Extract equation parts
                 parts = line.split("=")
-                if len(parts) == 2:
-                    lhs = parts[0].strip()
-                    rhs = parts[1].strip()
+                if len(parts) >= 2:  # Accept 2 or more parts
+                    # The rightmost part is the claimed answer
+                    expected_str = parts[-1].strip()
+                    # Remove any trailing punctuation
+                    expected_str = re.sub(r"[^\d.\-+*/() ]", "", expected_str)
 
-                    # Evaluate both sides safely
-                    # Remove any variable names (e.g., "total_cost = 48" -> verify "48")
-                    # For simplicity, we verify only numeric equations
-                    # Extract numbers from both sides
-                    lhs_nums = re.findall(r"[0-9.]+", lhs)
-                    rhs_nums = re.findall(r"[0-9.]+", rhs)
+                    # Try to find a pure arithmetic expression to verify
+                    # Look for the part that contains numeric operations
+                    arithmetic_expr = None
+                    for part in parts[:-1]:
+                        # Check if this part contains arithmetic operations with numbers
+                        if re.search(r"\d+\s*[\+\-\*/]\s*\d+", part):
+                            arithmetic_expr = part.strip()
+                            break
 
-                    # Simple check: if we can parse operations
-                    # For now, just count it as valid if format is correct
-                    if lhs_nums and rhs_nums:
-                        valid_steps += 1
+                    # If no arithmetic expression found, check if we have a simple assignment
+                    # like "white_fiber = 1" where the value is already computed
+                    if arithmetic_expr is None:
+                        # Check if second-to-last part is just a number
+                        if len(parts) >= 2:
+                            prev_part = parts[-2].strip()
+                            # Remove variable names and equals signs
+                            prev_part = re.sub(r"[a-zA-Z_]+\s*", "", prev_part).strip()
+                            if prev_part and re.match(r"^[\d.\-+*/() ]+$", prev_part):
+                                arithmetic_expr = prev_part
+
+                    # Try to evaluate and compare
+                    if arithmetic_expr:
+                        # Clean the expression: remove variable names, keep only numbers and operators
+                        clean_expr = re.sub(r"[a-zA-Z_]+", "", arithmetic_expr)
+                        clean_expr = clean_expr.strip()
+
+                        # Safe evaluation: only allow basic arithmetic
+                        if clean_expr and re.match(r"^[\d.\-+*/() ]+$", clean_expr):
+                            try:
+                                computed = eval(clean_expr, {"__builtins__": {}}, {})
+                                expected = eval(expected_str, {"__builtins__": {}}, {})
+
+                                # Compare with small tolerance for floating point
+                                if abs(computed - expected) < 0.01:
+                                    valid_steps += 1
+                                else:
+                                    invalid_steps += 1
+                            except Exception:
+                                invalid_steps += 1
+                        else:
+                            invalid_steps += 1
                     else:
-                        invalid_steps += 1
+                        # No arithmetic found, but format is okay - count as valid
+                        # This handles cases like "variable = 5" where value is given
+                        try:
+                            float(expected_str)
+                            valid_steps += 1
+                        except ValueError:
+                            invalid_steps += 1
                 else:
                     invalid_steps += 1
             except Exception:
