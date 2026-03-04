@@ -170,15 +170,24 @@ def verify_arithmetic_steps(response: str) -> Dict[str, Any]:
                 if len(parts) >= 2:  # Accept 2 or more parts
                     # The rightmost part is the claimed answer
                     expected_str = parts[-1].strip()
-                    # Remove any trailing punctuation
+                    # Remove LaTeX formatting and punctuation, keep only numbers and basic operators
+                    expected_str = re.sub(
+                        r"\\[\(\)a-zA-Z]+", "", expected_str
+                    )  # Remove LaTeX commands like \(, \), etc.
                     expected_str = re.sub(r"[^\d.\-+*/() ]", "", expected_str)
+                    expected_str = expected_str.strip(
+                        "()."
+                    ).strip()  # Remove trailing periods and parens
 
                     # Try to find a pure arithmetic expression to verify
                     # Look for the part that contains numeric operations
                     arithmetic_expr = None
                     for part in parts[:-1]:
                         # Check if this part contains arithmetic operations with numbers
-                        if re.search(r"\d+\s*[\+\-\*/]\s*\d+", part):
+                        # Include LaTeX symbols like \times, \div, \cdot
+                        if re.search(r"\d+\s*[\+\-\*/]\s*\d+", part) or re.search(
+                            r"\d+\s*\\(times|div|cdot)\s*\d+", part
+                        ):
                             arithmetic_expr = part.strip()
                             break
 
@@ -193,24 +202,64 @@ def verify_arithmetic_steps(response: str) -> Dict[str, Any]:
                             if prev_part and re.match(r"^[\d.\-+*/() ]+$", prev_part):
                                 arithmetic_expr = prev_part
 
+                    # [VALIDATOR FIX - Attempt 2]
+                    # [PROBLEM]: SyntaxWarning "'int' object is not callable; perhaps you missed a comma?"
+                    # [CAUSE]: LaTeX symbols like \times become spaces after cleaning, creating "8  5" instead of "8 * 5"
+                    #          which eval() tries to interpret as a function call 8(5), causing the warning
+                    # [FIX]: Replace common LaTeX math symbols with Python operators before cleaning,
+                    #        collapse multiple spaces, and add stricter validation before eval()
+                    #
+                    # [OLD CODE]:
+                    # if arithmetic_expr:
+                    #     clean_expr = re.sub(r"[a-zA-Z_]+", "", arithmetic_expr)
+                    #     clean_expr = clean_expr.strip()
+                    #     if clean_expr and re.match(r"^[\d.\-+*/() ]+$", clean_expr):
+                    #         try:
+                    #             computed = eval(clean_expr, {"__builtins__": {}}, {})
+                    #             ...
+                    #
+                    # [NEW CODE]:
                     # Try to evaluate and compare
                     if arithmetic_expr:
-                        # Clean the expression: remove variable names, keep only numbers and operators
-                        clean_expr = re.sub(r"[a-zA-Z_]+", "", arithmetic_expr)
-                        clean_expr = clean_expr.strip()
+                        # Replace LaTeX symbols with Python operators first
+                        clean_expr = arithmetic_expr.replace("\\times", "*")
+                        clean_expr = clean_expr.replace("\\div", "/")
+                        clean_expr = clean_expr.replace("\\cdot", "*")
+
+                        # Clean the expression: remove variable names and escaped underscores
+                        clean_expr = re.sub(r"\\", "", clean_expr)  # Remove backslashes
+                        clean_expr = re.sub(r"[a-zA-Z_]+", "", clean_expr)
+
+                        # Collapse multiple spaces to single space, then remove all spaces between operators and numbers
+                        clean_expr = re.sub(r"\s+", " ", clean_expr).strip()
+                        clean_expr = clean_expr.replace(
+                            " ", ""
+                        )  # Remove all spaces for clean arithmetic
 
                         # Safe evaluation: only allow basic arithmetic
-                        if clean_expr and re.match(r"^[\d.\-+*/() ]+$", clean_expr):
-                            try:
-                                computed = eval(clean_expr, {"__builtins__": {}}, {})
-                                expected = eval(expected_str, {"__builtins__": {}}, {})
+                        # Stricter check: must contain at least one operator between numbers
+                        if clean_expr and re.match(r"^[\d.\-+*/()]+$", clean_expr):
+                            # Verify it's not just adjacent numbers (like "85" from "8 5")
+                            # Must have at least one operator or be a single number
+                            if re.search(r"[\+\-\*/]", clean_expr) or re.match(
+                                r"^\d+\.?\d*$", clean_expr
+                            ):
+                                try:
+                                    computed = eval(
+                                        clean_expr, {"__builtins__": {}}, {}
+                                    )
+                                    expected = eval(
+                                        expected_str, {"__builtins__": {}}, {}
+                                    )
 
-                                # Compare with small tolerance for floating point
-                                if abs(computed - expected) < 0.01:
-                                    valid_steps += 1
-                                else:
+                                    # Compare with small tolerance for floating point
+                                    if abs(computed - expected) < 0.01:
+                                        valid_steps += 1
+                                    else:
+                                        invalid_steps += 1
+                                except (SyntaxError, SyntaxWarning, Exception):
                                     invalid_steps += 1
-                            except Exception:
+                            else:
                                 invalid_steps += 1
                         else:
                             invalid_steps += 1
