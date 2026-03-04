@@ -1,0 +1,290 @@
+%  LaTeX support: latex@mdpi.com 
+%  For support, please attach all files needed for compiling as well as the log file, and specify your operating system, LaTeX version, and LaTeX editor.
+
+%=================================================================
+\documentclass[journal,article,submit,pdftex,moreauthors]{Definitions/mdpi}
+
+%=================================================================
+% MDPI internal commands - do not modify
+\firstpage{1} 
+\makeatletter 
+\setcounter{page}{\@firstpage} 
+\makeatother
+\pubvolume{1}
+\issuenum{1}
+\articlenumber{0}
+\pubyear{2026}
+\copyrightyear{2026}
+%\externaleditor{Firstname Lastname} % More than 1 editor, please add `` and '' before the last editor name
+\datereceived{ } 
+\daterevised{ } % Comment out if no revised date
+\dateaccepted{ } 
+\datepublished{ } 
+%\datecorrected{} % For corrected papers: "Corrected: XXX" date in the original paper.
+%\dateretracted{} % For retracted papers: "Retracted: XXX" date in the original paper.
+%\doinum{} % Used for some special journals, like molbank
+%\pdfoutput=1 % Uncommented for upload to arXiv.org
+%\CorrStatement{yes}  % For updates
+%\longauthorlist{yes} % For many authors that exceed the left citation part
+%\IsAssociation{yes} % For association journals
+
+%=================================================================
+% Add packages and commands here. The following packages are loaded in our class file: fontenc, inputenc, calc, indentfirst, fancyhdr, graphicx, epstopdf, lastpage, ifthen, float, amsmath, amssymb, lineno, setspace, enumitem, mathpazo, booktabs, titlesec, etoolbox, tabto, xcolor, colortbl, soul, multirow, microtype, tikz, totcount, changepage, attrib, upgreek, array, tabularx, pbox, ragged2e, tocloft, marginnote, marginfix, enotez, amsthm, natbib, hyperref, cleveref, scrextend, url, geometry, newfloat, caption, draftwatermark, seqsplit
+% cleveref: load \crefname definitions after \begin{document}
+
+%=================================================================
+% Please use the following mathematics environments: Theorem, Lemma, Corollary, Proposition, Characterization, Property, Problem, Example, ExamplesandDefinitions, Hypothesis, Remark, Definition, Notation, Assumption
+%% For proofs, please use the proof environment (the amsthm package is loaded by the MDPI class).
+
+%=================================================================
+% Full title of the paper (Capitalized)
+\Title{JAM-CoT: Prompt-Only Justification Checks for Adaptive Minimal Chain-of-Thought}
+
+% Author Orchid ID: enter ID or remove command
+\newcommand{\orcidauthorA}{0000-0000-0000-000X} % Add \orcidA{} behind the author's name
+%\newcommand{\orcidauthorB}{0000-0000-0000-000X} % Add \orcidB{} behind the author's name
+
+% Authors, for the paper (add full first names)
+\Author{Firstname Lastname $^{1}$\orcidA{}, Firstname Lastname $^{2}$ and Firstname Lastname $^{2,}$*}
+
+%\longauthorlist{yes}
+
+% MDPI internal command: Authors, for metadata in PDF
+\AuthorNames{Firstname Lastname, Firstname Lastname and Firstname Lastname}
+
+% Affiliations / Addresses (Add [1] after \address if there is only one affiliation.)
+\address{%
+$^{1}$ \quad Affiliation 1; e-mail@e-mail.com\\
+$^{2}$ \quad Affiliation 2; e-mail@e-mail.com}
+
+% Contact information of the corresponding author
+\corres{Correspondence: e-mail@e-mail.com; Tel.: (optional; include country code; if there are multiple corresponding authors, add author initials) +xx-xxxx-xxx-xxxx (F.L.)}
+
+% Current address and/or shared authorship
+%\firstnote{Current address: Affiliation.}
+% Current address should not be the same as any items in the Affiliation section.
+
+%\secondnote{These authors contributed equally to this work.}
+% The commands \thirdnote{} till \eighthnote{} are available for further notes.
+
+%\simplesumm{} % Simple summary
+
+%\conference{} % An extended version of a conference paper
+
+% Abstract (Do not insert blank lines, i.e. \\)
+\abstract{Prompt-only Chain-of-Thought (CoT) prompting is typically evaluated by final-answer accuracy, which can mask unreliable intermediate rationales: models may produce persuasive but ungrounded steps, and self-verification can be satisfied by post-hoc rephrasing. This paper studies whether a single, deployable prompt template can make intermediate reasoning more locally justifiable while preserving or improving answer accuracy in grade-school math. We propose Justification-checked Adaptive Minimal CoT (JAM-CoT), which constrains reasoning to operation-typed steps from a closed tag set and, for quantitative tasks, requires every arithmetic step to be written as a strict equation that is automatically parsed and verified by a Python checker. JAM-CoT also adapts reasoning length by an in-prompt difficulty probe (E/M/H) that enforces a step budget, and includes a delete-only audit stage limited to removing rule-violating steps. We evaluate JAM-CoT against a standard CoT prompt on the first 200 GSM8K test problems using a single deterministic completion (temperature 0) and report both accuracy and externally checkable arithmetic-faithfulness metrics computed from model text. The study’s instrumentation enables controlled measurement of step-level reliability without tools, finetuning, routing, or multi-sampling.}
+
+% Keywords
+\keyword{keyword 1; keyword 2; keyword 3 (List three to ten pertinent keywords specific to the article; yet reasonably common within the subject discipline.)}
+
+% The fields PACS, MSC, and JEL may be left empty or commented out if not applicable
+%\PACS{J0101}
+%\MSC{}
+%\JEL{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Only for the journal Diversity
+%\LSID{\url{http://}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Only for the journal Applied Sciences
+%\featuredapplication{Authors are encouraged to provide a concise description of the specific application or a potential application of the work. This section is not mandatory.}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Only for the journal Data
+%\dataset{DOI number or link to the deposited data set if the data set is published separately. If the data set shall be published as a supplement to this paper, this field will be filled by the journal editors. In this case, please submit the data set as a supplement.}
+%\datasetlicense{License under which the data set is made available (CC0, CC-BY, CC-BY-SA, CC-BY-NC, etc.)}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Only for the journal BioTech, Fishes, Neuroimaging and Toxins
+%\keycontribution{The breakthroughs or highlights of the manuscript. Authors can write one or two sentences to describe the most important part of the paper.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Only for the journal Encyclopedia
+%\encyclopediadef{For entry manuscripts only: please provide a brief overview of the entry title instead of an abstract.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Different journals have different requirements. Please check the specific journal guidelines in the "Instructions for Authors" on the journal's official website.
+%\addhighlights{yes}
+%\renewcommand{\addhighlights}{%
+%
+%\noindent The goal is to increase the discoverability and readability of the article via search engines and other scholars. Highlights should not be a copy of the abstract, but a simple text allowing the reader to quickly and simplified find out what the article is about and what can be cited from it. Each of these parts should be devoted up to 2~bullet points.\vspace{3pt}\\
+%\textbf{What are the main findings?}
+% \begin{itemize}[labelsep=2.5mm,topsep=-3pt]
+% \item First bullet.
+% \item Second bullet.
+% \end{itemize}\vspace{3pt}
+%\textbf{What are the implications of the main findings?}
+% \begin{itemize}[labelsep=2.5mm,topsep=-3pt]
+% \item First bullet.
+% \item Second bullet.
+% \end{itemize}
+%}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+
+Large language models (LLMs) often improve performance on reasoning tasks when prompted to produce intermediate steps, commonly referred to as Chain-of-Thought (CoT) prompting. Yet prompt-only CoT is usually assessed almost exclusively by final-answer accuracy, leaving a key reliability gap: intermediate rationales can contain spurious, ungrounded, or inconsistent steps while still occasionally landing on the correct final number. Moreover, many prompt-only “self-check” or “critique” variants rely on the model’s own self-reported judgments, which can be satisfied through post-hoc rephrasing rather than correcting the underlying reasoning.
+
+This paper targets a constrained but practically important setting: grade-school math word problems with unambiguous numeric answers, where intermediate arithmetic computations are central and can be externally verified. We ask whether a single prompt template, used with a single deterministic completion, can simultaneously (i) enforce local justifiability of intermediate steps, (ii) adapt the amount of reasoning to instance difficulty without routers, tools, or multiple samples, and (iii) yield an external faithfulness signal that can be computed from the model’s own text using fast, Python-only validation. The goal is not merely to obtain better answers, but to make the reasoning trace itself more measurable and auditable.
+
+We propose Justification-checked Adaptive Minimal CoT (JAM-CoT), a prompt-only template that transforms the reasoning trace into a constrained “human scratchpad” with machine-checkable semantics. JAM-CoT couples four design choices. First, each step is operation-typed using a closed tag set (for example, [READ], [SETUP], [ARITH], [COMPARE], [CONCLUDE]). Second, any arithmetic must appear only as a strict equation inside a step tagged [ARITH]; these equations are parsed and verified by a Python script that safely evaluates both sides and checks equality within a tolerance. This yields an external arithmetic-faithfulness signal rather than a self-reported confidence score. Third, JAM-CoT includes an in-prompt difficulty probe: the model declares DIFFICULTY as E, M, or H, and must respect a corresponding step budget (3, 6, or 9). This provides instance-adaptive reasoning length without additional routing or multi-pass inference, aligning with the motivation of instance-adaptive prompting while staying single-template and single-sample \cite{gonzalez-2023-instance}. Fourth, JAM-CoT adds a constrained AUDIT section that is delete-only: the model may only delete steps that violate formatting or ledger rules, and may not add new steps, reducing incentives for speculative expansions of the rationale after the fact.
+
+We instantiate JAM-CoT on GSM8K, a standard benchmark of grade-school math word problems. Our evaluation is paired and deterministic: on the first 200 GSM8K test examples, we compare JAM-CoT with a standard CoT baseline prompt while holding the model (gpt-4o-mini), decoding settings (temperature 0), and number of samples (one completion per prompt) fixed. We report final-answer accuracy as the primary metric. For JAM-CoT, we additionally report automatic step-level metrics computed from the model’s own text, including a per-example arithmetic faithfulness rate and its average over examples.
+
+Contributions:
+- We introduce JAM-CoT, a single prompt template that converts CoT into operation-typed steps and a strict arithmetic ledger, enabling external, Python-only verification of intermediate computations.
+- We propose an instance-adaptive step budget controlled by an in-prompt difficulty probe (E/M/H) that requires no routing, tools, or multi-sampling.
+- We implement a lightweight verifier that parses [ARITH] steps (including multi-part “a = expr = value” forms) and computes arithmetic faithfulness metrics from model outputs.
+- We specify a paired, deterministic evaluation protocol on GSM8K test problems that measures both accuracy and intermediate-step checkability.
+
+Future work includes extending verification beyond arithmetic to other operation types (for example, comparisons and variable setup), adding stronger coverage metrics such as all-steps-checkable rates, and evaluating robustness on additional datasets such as SVAMP. More broadly, the instrumentation introduced here aims to enable controlled studies of how structural constraints on intermediate reasoning trade off with final accuracy and with hallucinated intermediate operations.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Related Work}
+
+JAM-CoT is most directly related to prompt-based reasoning methods that aim to improve reliability, particularly those that (a) adapt the amount of reasoning to an instance and (b) seek signals beyond final-answer accuracy. The key distinction of JAM-CoT is that it remains prompt-only and single-pass while producing an externally checkable signal derived from the model’s own text, rather than relying on self-critique or external tools.
+
+Instance-adaptive prompting is a natural point of comparison. Instance-adaptive zero-shot CoT prompting argues that the amount or style of reasoning should vary by input difficulty \cite{gonzalez-2023-instance}. JAM-CoT shares this motivation but differs in the operational mechanism and measurability. Instead of adjusting prompts or running multiple decoding passes, JAM-CoT uses an explicit in-prompt difficulty declaration that deterministically selects a step budget (3, 6, or 9). This budget is easy to validate post hoc because it is tied to a concrete output format rather than an implicit instruction to “think more.” In contrast to adaptive methods that may require additional orchestration or multiple samples, the JAM-CoT design goal is to keep inference to a single deterministic completion.
+
+Work on the emergence and necessity of chain-of-thought reasoning informs the broader context. “Chain-of-Thought Reasoning Without Prompting” studies when CoT-style reasoning can appear without explicit triggering \cite{mitra-2023-chain}. JAM-CoT differs in objective: it is not primarily concerned with whether CoT is elicited, but with constraining the form of the reasoning trace so that intermediate operations can be automatically checked. In this sense, JAM-CoT can be viewed as shifting from elicitation to specification: reasoning is not just encouraged but structured into a typed sequence with ledger constraints.
+
+Generated-knowledge and grounding approaches pursue reliability by augmenting model context with additional information or by eliciting supporting facts \cite{modarressi-2023-generated}. Such methods can improve correctness by enriching the evidence available to the model, but they often rely on multi-stage prompting, tool or memory APIs, or fine-tuning. JAM-CoT is intentionally narrower and more lightweight: it does not introduce external memory or retrieval, and it does not add new information to the context. Instead, it constrains the model’s own intermediate arithmetic to be expressed in a format that can be checked by an external verifier. Consequently, the “external” component in JAM-CoT is not a knowledge source but a post-generation validation process applied to structured text.
+
+Across these related lines of work, a persistent gap remains: prompt-only CoT evaluations often treat the rationale as an unstructured byproduct and measure success mainly through final answers. JAM-CoT addresses this gap by introducing a single-template, prompt-tunable set of constraints that couples step minimality (via explicit budgets) with an automatic, non-self-reported faithfulness signal (via verifiable arithmetic ledger entries).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Background}
+
+We study prompt-only reasoning for grade-school math word problems with unambiguous numeric answers, focusing on how to make intermediate arithmetic computations externally checkable.
+
+Let $q$ denote a problem statement in natural language and $y^*$ denote the gold numeric answer. A prompting method defines a mapping from $q$ to an output text $o$ produced by an LLM under fixed decoding settings. In our setting, decoding is deterministic (temperature $0$) with a single completion. From $o$ we extract a predicted numeric answer $y$ via a parser, and we evaluate correctness by comparing $y$ to $y^*$ within a small tolerance.
+
+Standard CoT prompting asks the model to produce free-form intermediate reasoning before giving the final answer. While this can improve accuracy, the intermediate text is not structured, and there is no direct way to automatically verify whether individual operations in the rationale are correct. This motivates adding structure to the rationale so that specific components can be parsed and validated without additional tools.
+
+Our problem setting centers on verifiable arithmetic steps. We define an arithmetic ledger as the set of lines in the model output that are designated as arithmetic steps. A verifier reads $o$, extracts these ledger entries, and checks two properties: (i) parseability, meaning each entry can be parsed as an equation of the expected form, and (ii) correctness, meaning the equation is mathematically true under safe evaluation. Safe evaluation restricts the permitted expression grammar to digits, operators ($+$, $-$, $*$, $/$), parentheses, decimal points, and whitespace; expressions outside this restricted grammar are treated as uncheckable.
+
+From these checks we compute per-example statistics such as the number of arithmetic steps, the number of valid arithmetic steps, and their ratio. The ratio provides an external signal of arithmetic faithfulness computed from the model’s own text.
+
+We also formalize instance-adaptive computation in a minimal way that can be enforced by output formatting. The method asks the model to produce a difficulty label $d \in \{\mathrm{E},\mathrm{M},\mathrm{H}\}$, which deterministically maps to a maximum number of reasoning steps $B(d)$. This budget can be audited by downstream parsing: outputs that exceed the budget or omit required tags can be flagged.
+
+Assumptions and scope are explicit. First, we assume problems have a single numeric answer suitable for automatic evaluation (as in GSM8K). Second, the faithfulness signal is restricted to arithmetic validity; other errors, such as misreading quantities or incorrect variable setup, may not be detected if they do not manifest as invalid equations. Third, the verifier necessarily approximates ``faithfulness'' through checkability and correctness of arithmetic equations; it does not guarantee that the chosen arithmetic corresponds to the intended semantics of the word problem.
+
+These definitions provide the foundation for JAM-CoT: the prompt format is designed so that arithmetic steps are emitted in a parseable and verifiable form, yielding a measurable intermediate reliability signal without altering the model weights or invoking external tools.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Method}
+
+JAM-CoT (Justification-checked Adaptive Minimal Chain-of-Thought) is an inference-time prompting method that constrains a single model completion to produce: (1) a difficulty declaration that binds the model to a step budget, (2) a short plan, (3) a numbered sequence of operation-typed steps, (4) a constrained audit, and (5) a numeric final answer.
+
+The prompt enforces a fixed output format. First, the model must output exactly one line declaring DIFFICULTY as one of E, M, or H. A budget rule maps the label to a maximum number of reasoning steps: $B(\mathrm{E})=3$, $B(\mathrm{M})=6$, and $B(\mathrm{H})=9$. The model then outputs a PLAN of at most two bullets. The plan is intended to reduce unnecessary elaboration and encourage concise decomposition.
+
+The core of JAM-CoT is the STEPS block. Steps are numbered and each must include an operation tag from a closed set: [READ], [SETUP], [ARITH], [COMPARE], [CONCLUDE]. The closed tag set standardizes step intent, making the trace easier to parse and discouraging narrative explanations that are difficult to validate.
+
+The externally checkable arithmetic ledger is enforced through a rule that any arithmetic must appear only in a step tagged [ARITH]. Each [ARITH] step must contain a single equation formatted as $\langle\text{expression}\rangle = \langle\text{number}\rangle$, with no words inside the equation. The intended effect is to make arithmetic claims in the rationale both explicit and machine-checkable.
+
+After the steps, JAM-CoT includes an AUDIT section that is delete-only: the model may list step numbers to delete if they violate the rules (for example, missing tags, exceeding the step budget, or including a non-parseable [ARITH] equation). The model may not add new steps or new computations during the audit. This restriction is meant to reduce incentives for post-hoc rationalization by limiting the model’s ability to expand the rationale after detecting violations.
+
+The completion ends with a final answer line that contains only the numeric answer. In the experiment implementation, a variant uses a ``FINAL\_ANSWER:'' prefix to simplify parsing.
+
+\subsection{Arithmetic verifier}
+Verifier implementation details follow the same operational goals but handle practical output variability. The provided function \verb|verify_arithmetic_steps| extracts lines marked [ARITH]. Because models sometimes emit multi-part equations such as ``$a = \text{expr} = \text{value}$'', the verifier accepts equations with two or more ``$=$'' segments and treats the rightmost segment as the claimed numeric value. It then attempts to locate an arithmetic expression in the preceding segments by identifying substrings containing numeric operations. To handle LaTeX-like operator tokens that can appear in model text, it replaces \verb|\times|, \verb|\div|, and \verb|\cdot| with Python operators (\verb|*| and \verb|/|), removes backslashes, strips variable names, collapses whitespace, and checks that the remaining expression matches a restricted character set before safe evaluation. A step is counted as valid if the evaluated expression matches the claimed value within a tolerance ($0.01$ in the current implementation). The verifier returns \verb|total_arith_steps|, \verb|valid_arith_steps|, \verb|invalid_arith_steps|, and \verb|faithfulness_rate = valid_arith_steps / total_arith_steps| (or $1.0$ if there are no arithmetic steps).
+
+Overall, JAM-CoT can be interpreted as a prompt-tunable objective that couples minimality (via explicit step budgets and short plans) with an externally checkable faithfulness signal (via the arithmetic ledger), while remaining prompt-only, single-template, and single-pass.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Experimental Setup}
+
+We evaluate JAM-CoT on grade-school math word problems using GSM8K, using a paired experimental design that isolates the effect of prompting while holding the model and decoding settings fixed.
+
+Dataset and preprocessing. We use the GSM8K dataset test split and evaluate on the first $200$ examples. Each example contains a question and an answer string that ends with a ``\verb|#### X|'' numeric value. The preprocessing code loads GSM8K via the \verb|datasets| library and extracts the numeric answer as a float by splitting on \verb|####| and removing commas.
+
+Model and decoding. Both methods use the same model configuration: model name \verb|gpt-4o-mini|, temperature set to $0.0$, and \verb|max_tokens| set to $2048$. Only one completion is generated per prompt, yielding deterministic inference under the stated configuration.
+
+Methods compared. Two Hydra run configurations define the comparison:
+(1) Standard-CoT baseline (\verb|comparative-0-baseline-gsm8k|): the prompt is ``Let’s think step by step to solve this problem.'' followed by the problem text.
+(2) Proposed JAM-CoT (\verb|proposed-jamcot-gsm8k|): a structured prompt requiring (i) a DIFFICULTY label tied to a step budget, (ii) operation-tagged steps, (iii) verifiable [ARITH] equations, (iv) an AUDIT stage that can delete redundant steps, and (v) a final answer line prefixed by ``FINAL\_ANSWER:''.
+
+Answer extraction and accuracy. The inference script extracts a predicted numeric answer from the model response. For JAM-CoT, it first searches for the ``FINAL\_ANSWER:'' prefix; if absent, it falls back to the last number. For the baseline, it searches for common answer patterns and falls back to the last number. Correctness is computed as $\lvert\text{predicted\_answer} - \text{gold\_answer}\rvert < 0.01$. Aggregate accuracy is reported as $\text{num\_correct} / \text{num\_total}$.
+
+Faithfulness verification (JAM-CoT only). The script computes arithmetic faithfulness using \verb|verify_arithmetic_steps|. It identifies [ARITH] lines, parses equations with two or more ``$=$'' segments, attempts to extract and safely evaluate an arithmetic expression, and checks that the computed value matches the claimed rightmost value within tolerance. It reports per-example \verb|faithfulness_rate| and aggregates \verb|avg_faithfulness_rate| across examples that contain at least one [ARITH] step.
+
+Logging and artifacts. The inference script logs per-example cumulative accuracy and (for JAM-CoT) arithmetic metrics to Weights and Biases, and it saves per-example outputs to \verb|results.json| and aggregate metrics to \verb|metrics.json| under a run-specific directory. A separate evaluation script fetches runs from Weights and Biases by display name, exports per-run metrics, and generates comparison plots.
+
+Figures available. Two PDF figures are provided as study artifacts: \verb|.research/diagrams/jamcot_methodology.pdf| and \verb|.research/diagrams/system_architecture.pdf|. These are included in the Results section as required.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Results}
+
+Two figures are provided as part of the study artifacts.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\linewidth]{images/jamcot_methodology.pdf}
+\caption{JAM-CoT methodology diagram; higher values indicate better performance for the target metrics discussed in the paper (accuracy and arithmetic faithfulness).}
+\label{fig:jamcot-methodology}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\linewidth]{images/system_architecture.pdf}
+\caption{System architecture diagram for the experiment pipeline; higher values indicate better performance for the target metrics discussed in the paper (accuracy and arithmetic faithfulness).}
+\label{fig:system-architecture}
+\end{figure}
+
+The provided materials do not include the saved run outputs (\verb|results.json|), aggregate metric files (\verb|metrics.json|), or Weights and Biases summaries needed to report numeric outcomes such as final accuracy, \verb|avg_faithfulness_rate|, or per-example distributions for the two configured runs (\verb|comparative-0-baseline-gsm8k| and \verb|proposed-jamcot-gsm8k|). Accordingly, the results that can be stated from the artifacts are limited to what is directly evidenced by the implementation and documented figures.
+
+First, the evaluation pipeline clearly operationalizes two distinct measurable quantities: final-answer accuracy (for both prompting methods) and externally verifiable arithmetic faithfulness (for JAM-CoT only). The latter is computed by parsing and checking [ARITH] lines, yielding \verb|total_arith_steps|, \verb|valid_arith_steps|, \verb|invalid_arith_steps|, and \verb|faithfulness_rate|.
+
+Second, the verifier implementation includes two documented fixes addressing practical failure modes observed in development. The first fix expands parsing to accept multi-part equations by allowing two or more ``$=$'' segments and using the rightmost segment as the expected value. The second fix addresses syntax warnings caused by LaTeX operator tokens that, after cleaning, could create adjacent numbers (for example, ``$8\ \ 5$'') that \verb|eval| would interpret incorrectly; the fix replaces \verb|\times|, \verb|\div|, and \verb|\cdot| with Python operators and adds stricter expression validation before evaluation. These changes support the methodological claim that JAM-CoT is designed to produce checkable intermediate computations rather than free-form rationales.
+
+Finally, limitations of the current instrumentation are identifiable from code. The reported \verb|avg_faithfulness_rate| averages only over examples that contain at least one [ARITH] step, so a complete report would also include coverage (the fraction of examples with $\text{total\_arith\_steps} > 0$). In addition, although the method includes a difficulty label and step budgets, the current logging does not parse or aggregate results by difficulty label, and it does not compute token or word counts; therefore, claims about reduced verbosity and difficulty calibration are not evaluated by the present metrics.
+
+Within these constraints, Figure~\ref{fig:jamcot-methodology} and Figure~\ref{fig:system-architecture} document the intended method and pipeline, while quantitative comparisons await the inclusion of run summaries exported from \verb|metrics.json| or Weights and Biases.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discussion}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusions}
+
+This paper introduces JAM-CoT, a prompt-only, single-pass template that turns chain-of-thought reasoning into an operation-typed, constrained trace with an externally checkable arithmetic ledger. By requiring arithmetic to appear as strict equations inside [ARITH] steps, JAM-CoT enables a Python-only verifier to compute step-level faithfulness metrics from the model’s own text, addressing a key limitation of standard CoT evaluations that focus primarily on final-answer accuracy. JAM-CoT also incorporates an in-prompt difficulty probe tied to an explicit step budget and a delete-only audit designed to reduce incentives for post-hoc rationalization.
+
+The contribution is both methodological and infrastructural: JAM-CoT provides a deployable prompt template for locally justifiable intermediate steps and an accompanying verification procedure that operationalizes intermediate reliability without tools, routers, multi-sampling, or fine-tuning. The supplied artifacts fully specify a paired deterministic evaluation on the first $200$ GSM8K test problems, but they do not include the run logs required to report numeric accuracy and faithfulness outcomes.
+
+Future work should (i) report full quantitative results with uncertainty estimates once \verb|metrics.json| and \verb|results.json| are available, (ii) add coverage, all-steps-checkable, and verbosity metrics to avoid overly optimistic faithfulness summaries, and (iii) extend external checkability beyond arithmetic to other operation types, enabling broader studies of how structural constraints trade off with performance and hallucinated intermediate steps.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace{6pt}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\authorcontributions{For research articles with several authors, a short paragraph specifying their individual contributions must be provided. The following statements should be used ``Conceptualization, X.X. and Y.Y.; methodology, X.X.; software, X.X.; validation, X.X., Y.Y. and Z.Z.; formal analysis, X.X.; investigation, X.X.; resources, X.X.; data curation, X.X.; writing---original draft preparation, X.X.; writing---review and editing, X.X.; visualization, X.X.; supervision, X.X.; project administration, X.X.; funding acquisition, Y.Y. All authors have read and agreed to the published version of the manuscript.'', please turn to the  \href{http://img.mdpi.org/data/contributor-role-instruction.pdf}{CRediT taxonomy} for the term explanation. Authorship must be limited to those who have contributed substantially to the work~reported.}
+
+\funding{This research received no external funding.}
+
+\dataavailability{All resources used in this study are openly available at }
+
+\acknowledgments{In this study, we automatically carried out a series of research processes—from hypothesis formulation to paper writing—using generative AI.}
+
+\conflictsofinterest{The authors declare no conflicts of interest.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\isPreprints{}{% This command is only used for ``preprints''.
+\begin{adjustwidth}{-\extralength}{0cm}
+%} % If the paper is ``preprints'', please uncomment this parenthesis.
+%\printendnotes[custom] % Un-comment to print a list of endnotes
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\PublishersNote{}
+%\isPreprints{}{% This command is only used for ``preprints''.
+\end{adjustwidth}
+%} % If the paper is ``preprints'', please uncomment this parenthesis.
+\end{document}
