@@ -241,5 +241,11 @@
       "config/run/proposed-jamcot-gsm8k.yaml": "# Proposed: JAM-CoT on GSM8K\nrun_id: proposed-jamcot-gsm8k\n\nmethod:\n  name: JAM-CoT\n  type: proposed\n  description: \"Justification-checked Adaptive Minimal CoT with operation-typed steps, auto-checkable arithmetic ledger, and adaptive budget\"\n\nmodel:\n  name: gpt-4o-mini\n  provider: openai\n  temperature: 0.0\n  max_tokens: 2048\n\ndataset:\n  name: gsm8k\n  split: test\n  num_samples: 200  # full run\n  num_samples_sanity: 10  # sanity check\n\ninference:\n  batch_size: 1\n  cache_responses: true\n",
       "pyproject.toml": "[project]\nname = \"jam-cot-experiment\"\nversion = \"0.1.0\"\ndescription = \"JAM-CoT prompt tuning experiment on GSM8K\"\nrequires-python = \">=3.11\"\ndependencies = [\n    \"hydra-core>=1.3.0\",\n    \"wandb>=0.16.0\",\n    \"openai>=1.0.0\",\n    \"datasets>=2.14.0\",\n    \"numpy>=1.24.0\",\n    \"matplotlib>=3.7.0\",\n    \"pyyaml>=6.0\",\n]\n\n[build-system]\nrequires = [\"hatchling\"]\nbuild-backend = \"hatchling.build\"\n\n# [VALIDATOR FIX - Attempt 1]\n# [PROBLEM]: hatchling cannot find files to ship - \"Unable to determine which files to ship inside the wheel\"\n# [CAUSE]: No directory named 'jam_cot_experiment' exists, and no explicit packages configuration provided\n# [FIX]: Added tool.hatch.build.targets.wheel.packages to point to src/ directory\n#\n# [OLD CODE]:\n# (no hatch configuration was present)\n#\n# [NEW CODE]:\n[tool.hatch.build.targets.wheel]\npackages = [\"src\"]"
     }
+  },
+  "experimental_results": {
+    "figures": [
+      ".research/diagrams/jamcot_methodology.pdf",
+      ".research/diagrams/system_architecture.pdf"
+    ]
   }
 }
