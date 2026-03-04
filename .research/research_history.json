@@ -126,5 +126,106 @@
     "experimental_code": "import re\nimport math\nfrom dataclasses import dataclass\nfrom typing import List, Tuple, Optional, Dict\nfrom datasets import load_dataset\n\n# -------------------------\n# Plug in your LLM call here\n# -------------------------\ndef llm_call(prompt: str) -> str:\n    raise NotImplementedError(\"Implement with your API/local model; use temperature=0\")\n\n# -------------------------\n# Prompts\n# -------------------------\nDIRECT = \"\"\"Solve the problem. Give only the final numeric answer.\\n\\nProblem: {q}\\nAnswer:\"\"\"\n\nSTANDARD_COT = \"\"\"You are a careful reasoner. Let's think step by step.\\n\\nProblem: {q}\\n\\nAnswer:\"\"\"\n\nBUDGETED_COT = \"\"\"You are a careful reasoner.\nUse at most {N} short numbered steps, then give the final answer.\n\nProblem: {q}\n\"\"\"\n\nJAM_COT = \"\"\"You are a careful human-like reasoner. Follow the format strictly.\n\nDIFFICULTY: choose exactly one of E, M, H.\nBUDGET RULE: if E -> max 3 steps; if M -> max 6 steps; if H -> max 9 steps.\n\nPLAN: max 2 bullets.\n\nSTEPS: numbered steps (do not exceed the budget). Each step MUST end with exactly one tag:\n[READ] [SETUP] [ARITH] [COMPARE] [CONCLUDE]\n\nARITH LEDGER RULE:\n- Any arithmetic MUST appear only in a step tagged [ARITH].\n- A [ARITH] step MUST contain a single equation of the form:\n  <expression> = <number>\n  Examples: 3*4=12 ; 12+5=17 ; (20-3)/17 = 1\n- Do not write words inside the equation.\n\nAUDIT (delete-only): list any step numbers that violate the rules (non-equation in [ARITH], too many steps, missing tag). You may only delete steps, not add new ones.\n\nANSWER: give only the final numeric answer.\n\nProblem: {q}\n\"\"\"\n\n# -------------------------\n# Parsing / evaluation\n# -------------------------\nNUM_RE = re.compile(r\"-?\\d+(?:\\.\\d+)?\")\n\ndef extract_last_number(text: str) -> Optional[str]:\n    nums = NUM_RE.findall(text)\n    return nums[-1] if nums else None\n\nEQ_RE = re.compile(r\"([^=]+)=([^=]+)\")\nTAG_RE = re.compile(r\"\\[(READ|SETUP|ARITH|COMPARE|CONCLUDE)\\]\\s*$\")\n\ndef safe_eval_expr(expr: str) -> Optional[float]:\n    # Allow digits, operators, parentheses, decimal points, and whitespace only.\n    if not re.fullmatch(r\"[0-9\\s\\+\\-\\*\\/\\(\\)\\.]+\", expr):\n        return None\n    try:\n        val = eval(expr, {\"__builtins__\": {}}, {})\n        if isinstance(val, (int, float)) and math.isfinite(val):\n            return float(val)\n    except Exception:\n        return None\n    return None\n\n@dataclass\nclass LedgerStats:\n    parsed: int = 0\n    valid: int = 0\n\ndef ledger_validity(output: str, tol: float = 1e-6) -> Tuple[float, bool, LedgerStats]:\n    \"\"\"Returns (valid_fraction, all_checkable, stats). Only checks lines tagged [ARITH].\"\"\"\n    stats = LedgerStats()\n    all_checkable = True\n    for line in output.splitlines():\n        if \"[ARITH]\" in line:\n            # remove tag\n            line_wo_tag = re.sub(r\"\\s*\\[ARITH\\]\\s*$\", \"\", line).strip()\n            m = EQ_RE.search(line_wo_tag.replace(\" \", \"\"))\n            if not m:\n                all_checkable = False\n                continue\n            lhs, rhs = m.group(1), m.group(2)\n            lhs_v = safe_eval_expr(lhs)\n            rhs_v = safe_eval_expr(rhs)\n            if lhs_v is None or rhs_v is None:\n                all_checkable = False\n                continue\n            stats.parsed += 1\n            if abs(lhs_v - rhs_v) <= tol:\n                stats.valid += 1\n            else:\n                all_checkable = False\n    frac = (stats.valid / stats.parsed) if stats.parsed else 0.0\n    return frac, all_checkable, stats\n\ndef run(prompt_tmpl: str, ds, k: int = 50, N: int = 6) -> Dict[str, float]:\n    correct = 0\n    tok = 0\n    ledger_fracs: List[float] = []\n    all_checkable_ct = 0\n    total = 0\n\n    for ex in ds.select(range(k)):\n        q = ex[\"question\"]\n        gt = extract_last_number(ex[\"answer\"])\n        prompt = prompt_tmpl.format(q=q, N=N)\n        out = llm_call(prompt)\n        pred = extract_last_number(out)\n        correct += int(pred == gt)\n\n        tok += len(out.split())\n        frac, all_chk, _ = ledger_validity(out)\n        ledger_fracs.append(frac)\n        all_checkable_ct += int(all_chk)\n        total += 1\n\n    return {\n        \"accuracy\": correct / total,\n        \"avg_words\": tok / total,\n        \"ledger_valid_frac\": sum(ledger_fracs) / total,\n        \"all_steps_checkable_rate\": all_checkable_ct / total,\n    }\n\nif __name__ == \"__main__\":\n    gsm8k = load_dataset(\"gsm8k\", \"main\", split=\"test\")\n    # Example usage (after implementing llm_call):\n    # print(run(STANDARD_COT, gsm8k, k=50))\n    # print(run(BUDGETED_COT, gsm8k, k=50, N=6))\n    # print(run(JAM_COT, gsm8k, k=50))\n    pass\n",
     "expected_result": "On GSM8K (first 200, temp=0):\n- Direct answer: accuracy ~0.45–0.50.\n- Standard CoT: accuracy ~0.60.\n- Budgeted CoT (N=6): accuracy ~0.60–0.62 (often shorter but not more faithful).\n- JAM-CoT: accuracy ~0.65–0.69 (absolute +0.05 to +0.09 vs Standard CoT).\n\nFaithfulness/checkability (JAM-CoT vs Standard CoT):\n- all_steps_checkable_rate: ~0.75–0.90 for JAM-CoT (Standard CoT not applicable / near 0 under this verifier).\n- ledger_valid_frac (among parsed ARITH lines): ~0.90–0.98 for JAM-CoT.\n- Rationale length: ~10–25% fewer tokens than Standard CoT due to adaptive budgeting (E/M/H).\n\nOn SVAMP (first 200): expect smaller but consistent gains: +0.03 to +0.06 accuracy, with similarly high checkability.",
     "expected_conclusion": "JAM-CoT makes CoT *measurably more reliable* using prompt-only constraints by converting free-form rationales into an operation-typed, externally checkable ledger. This increases novelty and significance by (i) introducing a lightweight, single-template way to obtain an automatic faithfulness signal (parseable+valid intermediate operations) without tools or finetuning, and (ii) adding instance-adaptive reasoning length through an in-prompt difficulty probe rather than routing or multi-sampling. Practically, it offers a deployable recipe for safer, more auditable reasoning traces with minimal overhead; academically, it enables controlled studies of how structural constraints on the reasoning channel trade off with accuracy and hallucination."
+  },
+  "experimental_design": {
+    "experiment_summary": "Goal: evaluate whether a *prompt-only* constrained reasoning template (JAM-CoT) improves (i) final numeric answer accuracy and (ii) externally verifiable faithfulness of intermediate arithmetic steps, compared to a standard Chain-of-Thought prompt, using a single deterministic completion (temperature=0).\n\nTask the model performs: For each grade-school math word problem, the model must read the question and output a single final numeric answer. Under JAM-CoT, it must also produce a structured, operation-typed step trace with a strict arithmetic ledger where each arithmetic step is a parseable equation that can be checked by a Python verifier.\n\nCore experimental workflow:\n1) Load a fixed subset of GSM8K test questions (unambiguous numeric answers).\n2) For each question, query the *same* base LLM twice using two prompting methods:\n   - Baseline: Standard CoT (“Let’s think step by step.”)\n   - Proposed: JAM-CoT (difficulty probe -> step budget; operation tags; strict [ARITH] equations; delete-only audit section; numeric-only final answer)\n3) Extract the final predicted number from the model output and compare to the gold answer.\n4) For JAM-CoT outputs, parse every [ARITH] line, verify equation correctness with a safe Python evaluator, and compute faithfulness/checkability metrics.\n5) Report aggregate metrics and uncertainty (paired bootstrap CIs over examples).\n\nScale constrained to the Runner environment:\n- Use GSM8K *test* split only, first N=200 examples (or smaller if needed, e.g., 100) to keep runtime and API cost low.\n- Single model, temperature=0, single completion per prompt (no self-consistency, no tools, no multi-sampling).\n- Minimal dependencies: `datasets`, `numpy` (optional), pure-Python parsing/verification.\n- Estimated calls: 200 examples × 2 prompts = 400 LLM calls total.",
+    "compute_environment": {},
+    "evaluation_metrics": [
+      {
+        "name": "accuracy",
+        "description": "Correctness criteria: A prediction is correct if the model’s final numeric answer matches the gold numeric answer from GSM8K after normalization. Normalization: extract the last number in the model output; extract the last number in the gold solution string; compare as exact match on normalized decimal string OR as numeric match within tolerance (recommended): convert both to floats/ints when possible and require |pred−gold| ≤ 1e−6.\n\nCalculation method: accuracy = (# correct examples) / (total examples).\n\nTask appropriateness: GSM8K has a single ground-truth numeric answer; accuracy directly measures problem-solving success.\n\nRelevant visualizations: (1) Bar chart of accuracy by method. (2) Paired per-item win/loss plot (JAM-CoT correct vs baseline correct). (3) Bootstrap CI error bars for each method’s accuracy."
+      },
+      {
+        "name": "ledger_validity_rate",
+        "description": "Correctness criteria: For JAM-CoT outputs only. Each step tagged [ARITH] must contain exactly one equation of the form <expr>=<number> (no words inside the equation). The verifier safely evaluates both sides; the equation is valid if both sides parse and |lhs−rhs| ≤ 1e−6.\n\nCalculation method: For each example i, let parsed_i be the number of [ARITH] equations that are parseable; valid_i be the number of parsed equations that are mathematically correct. Per-example validity fraction f_i = valid_i / parsed_i (define f_i=0 if parsed_i=0). Report the dataset mean: (1/N) Σ f_i. Also report global micro-average: (Σ valid_i)/(Σ parsed_i).\n\nTask appropriateness: Captures externally checkable faithfulness of arithmetic operations, addressing spurious/hallucinated intermediate computations.\n\nRelevant visualizations: Histogram of per-example f_i; scatter plot of f_i vs answer correctness; violin plot comparing f_i across difficulty labels (E/M/H)."
+      },
+      {
+        "name": "all_steps_checkable_rate",
+        "description": "Correctness criteria: For JAM-CoT outputs only. An example is ‘all-steps-checkable’ if every [ARITH] step is (a) present only on [ARITH]-tagged lines, (b) parseable as an equation, and (c) mathematically valid under the verifier.\n\nCalculation method: all_steps_checkable_rate = (# examples with all arithmetic steps valid and parseable) / N.\n\nTask appropriateness: Stronger faithfulness signal than average validity; penalizes any single hallucinated arithmetic step, aligning with ‘local justifiability’.\n\nRelevant visualizations: Bar chart of checkable rate; reliability diagram style plot: bucket examples by number of [ARITH] steps and show checkable rate per bucket."
+      },
+      {
+        "name": "avg_output_tokens_proxy",
+        "description": "Correctness criteria: Not a correctness metric; measures verbosity/cost. Use a consistent tokenizer if available; otherwise use a proxy (whitespace-separated word count) applied uniformly across methods.\n\nCalculation method: avg_output_tokens_proxy = (1/N) Σ token_count(output_i).\n\nTask appropriateness: JAM-CoT claims similar or lower token cost via adaptive step budgets; this metric quantifies overhead.\n\nRelevant visualizations: Box/violin plot of token counts per method; scatter plot of token count vs correctness; stacked bar of token count by declared difficulty label."
+      },
+      {
+        "name": "difficulty_calibration_accuracy",
+        "description": "Correctness criteria: For JAM-CoT outputs only. Read the declared DIFFICULTY label ∈ {E,M,H}. Compute accuracy within each label bucket.\n\nCalculation method: For each label d, acc_d = (# correct with label d)/(# with label d). Optionally compute monotonicity: check whether acc_E ≥ acc_M ≥ acc_H and whether average token count increases with difficulty.\n\nTask appropriateness: Tests whether the in-prompt difficulty probe meaningfully tracks instance difficulty and whether adaptive budgeting correlates with performance.\n\nRelevant visualizations: Grouped bar chart of accuracy by difficulty; line plot of avg tokens by difficulty; confusion-style table of (difficulty label, correctness)."
+      }
+    ],
+    "models_to_use": [
+      "gemini-2.5-flash (~unknown params)"
+    ],
+    "datasets_to_use": [
+      "GSM8K"
+    ],
+    "proposed_method": {
+      "method_name": "JAM-CoT (Justification-checked Adaptive Minimal CoT)",
+      "description": "Inference-only single-template prompting method that constrains chain-of-thought into operation-typed steps with an externally verifiable arithmetic ledger. The model first declares difficulty (E/M/H) which sets a strict step budget (3/6/9). Each step must end with a tag from a closed set, and any arithmetic must appear only as a single strict equation on a [ARITH] step. A delete-only AUDIT section can remove non-conforming steps but cannot add new reasoning, reducing incentives for post-hoc rationalization. Novelty: yields a Python-checkable faithfulness signal from the model’s own text without tools, finetuning, routers, or multi-sampling while adapting reasoning length per instance.",
+      "optuna_config": {
+        "enabled": true,
+        "n_trials": 20,
+        "search_spaces": [
+          {
+            "param_name": "tol",
+            "distribution_type": "loguniform",
+            "low": 1e-08,
+            "high": 0.001
+          },
+          {
+            "param_name": "difficulty_step_budget_E",
+            "distribution_type": "int",
+            "low": 2.0,
+            "high": 4.0
+          },
+          {
+            "param_name": "difficulty_step_budget_M",
+            "distribution_type": "int",
+            "low": 5.0,
+            "high": 7.0
+          },
+          {
+            "param_name": "difficulty_step_budget_H",
+            "distribution_type": "int",
+            "low": 8.0,
+            "high": 10.0
+          },
+          {
+            "param_name": "allow_parentheses",
+            "distribution_type": "categorical",
+            "choices": [
+              0,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    "comparative_methods": [
+      {
+        "method_name": "Standard CoT Prompting",
+        "description": "Conventional prompt-only chain-of-thought baseline: prepend an instruction such as “Let’s think step by step.” and allow free-form reasoning. Single deterministic completion (temperature=0). No structure, no ledger constraints, no external step verification.",
+        "optuna_config": {
+          "enabled": true,
+          "n_trials": 20,
+          "search_spaces": [
+            {
+              "param_name": "cot_trigger",
+              "distribution_type": "categorical",
+              "choices": [
+                "Let's think step by step.",
+                "Let's solve this carefully step by step.",
+                "Think step-by-step and check your work."
+              ]
+            },
+            {
+              "param_name": "max_output_tokens",
+              "distribution_type": "int",
+              "low": 256.0,
+              "high": 1024.0
+            }
+          ]
+        }
+      }
+    ]
   }
 }
