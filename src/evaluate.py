@@ -3,10 +3,25 @@ Evaluation script for aggregating results across runs.
 Fetches data from WandB and generates comparison plots.
 """
 
+# [VALIDATOR FIX - Attempt 1]
+# [PROBLEM]: evaluate.py was being called with Hydra-style arguments (results_dir="...") but expected argparse (--results_dir ...)
+# [CAUSE]: Workflow uses Hydra syntax but evaluate.py used argparse
+# [FIX]: Convert evaluate.py to use Hydra configuration like other scripts
+#
+# [OLD CODE]:
+# import argparse
+# def parse_args():
+#     parser = argparse.ArgumentParser(...)
+#     parser.add_argument("--results_dir", ...)
+#     ...
+#     return parser.parse_args()
+#
+# [NEW CODE]:
 import os
 import sys
 import json
-import argparse
+import hydra
+from omegaconf import DictConfig
 from typing import List, Dict, Any
 import wandb
 import matplotlib
@@ -14,29 +29,6 @@ import matplotlib
 matplotlib.use("Agg")  # Non-interactive backend
 import matplotlib.pyplot as plt
 import numpy as np
-
-
-def parse_args():
-    """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Evaluate and compare experimental runs"
-    )
-    parser.add_argument(
-        "--results_dir", type=str, required=True, help="Results directory"
-    )
-    parser.add_argument(
-        "--run_ids", type=str, required=True, help="JSON list of run IDs to compare"
-    )
-    parser.add_argument(
-        "--wandb_entity", type=str, default="airas", help="WandB entity"
-    )
-    parser.add_argument(
-        "--wandb_project",
-        type=str,
-        default="20260304-matsuzawa-cloud",
-        help="WandB project",
-    )
-    return parser.parse_args()
 
 
 def fetch_run_data(
@@ -314,12 +306,31 @@ def compute_aggregated_metrics(all_run_data: List[Dict]) -> Dict[str, Any]:
     return aggregated
 
 
-def main():
+@hydra.main(version_base=None, config_path=None)
+def main(cfg: DictConfig):
     """Main evaluation entry point."""
-    args = parse_args()
+    # Extract parameters from config or use defaults
+    results_dir = cfg.get("results_dir", ".research/results")
+    run_ids_str = cfg.get("run_ids", "[]")
 
-    # Parse run IDs
-    run_ids = json.loads(args.run_ids)
+    # Get wandb config with safe nested access
+    wandb_cfg = cfg.get("wandb", {})
+    wandb_entity = cfg.get(
+        "wandb_entity", wandb_cfg.get("entity", "airas") if wandb_cfg else "airas"
+    )
+    wandb_project = cfg.get(
+        "wandb_project",
+        wandb_cfg.get("project", "20260304-matsuzawa-cloud")
+        if wandb_cfg
+        else "20260304-matsuzawa-cloud",
+    )
+
+    # Parse run IDs (handle both string and list)
+    if isinstance(run_ids_str, str):
+        run_ids = json.loads(run_ids_str)
+    else:
+        run_ids = run_ids_str
+
     print(f"Evaluating {len(run_ids)} runs: {run_ids}")
 
     # Initialize WandB API
@@ -329,7 +340,7 @@ def main():
     all_run_data = []
     for run_id in run_ids:
         print(f"\nFetching data for {run_id}...")
-        run_data = fetch_run_data(api, args.wandb_entity, args.wandb_project, run_id)
+        run_data = fetch_run_data(api, wandb_entity, wandb_project, run_id)
 
         if run_data is None:
             print(f"Skipping {run_id} due to missing data")
@@ -338,10 +349,10 @@ def main():
         all_run_data.append(run_data)
 
         # Export per-run metrics
-        export_per_run_metrics(run_data, args.results_dir)
+        export_per_run_metrics(run_data, results_dir)
 
         # Create per-run figures
-        create_per_run_figures(run_data, args.results_dir)
+        create_per_run_figures(run_data, results_dir)
 
     if len(all_run_data) == 0:
         print("ERROR: No run data available for evaluation", file=sys.stderr)
@@ -349,14 +360,14 @@ def main():
 
     # Create comparison figures
     print("\nCreating comparison figures...")
-    comparison_figures = create_comparison_figures(all_run_data, args.results_dir)
+    comparison_figures = create_comparison_figures(all_run_data, results_dir)
 
     # Compute aggregated metrics
     print("\nComputing aggregated metrics...")
     aggregated_metrics = compute_aggregated_metrics(all_run_data)
 
     # Export aggregated metrics
-    comparison_dir = os.path.join(args.results_dir, "comparison")
+    comparison_dir = os.path.join(results_dir, "comparison")
     os.makedirs(comparison_dir, exist_ok=True)
 
     agg_metrics_path = os.path.join(comparison_dir, "aggregated_metrics.json")
@@ -384,7 +395,7 @@ def main():
     # Print all generated files
     print("\nGenerated files:")
     for run_data in all_run_data:
-        run_dir = os.path.join(args.results_dir, run_data["run_id"])
+        run_dir = os.path.join(results_dir, run_data["run_id"])
         print(f"  {run_dir}/metrics.json")
         if os.path.exists(os.path.join(run_dir, "accuracy_over_examples.pdf")):
             print(f"  {run_dir}/accuracy_over_examples.pdf")
