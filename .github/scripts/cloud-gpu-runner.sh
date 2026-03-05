@@ -49,6 +49,10 @@ log() {
   echo "$(date -u '+%Y-%m-%d %H:%M:%S UTC') [cloud-gpu-runner] $*" >&2
 }
 
+warn() {
+  echo "::warning::$(date -u '+%Y-%m-%d %H:%M:%S UTC') [cloud-gpu-runner] $*"
+}
+
 get_runner_version() {
   local response version
   response=$(curl -s https://api.github.com/repos/actions/runner/releases/latest)
@@ -292,7 +296,13 @@ aws_try_region() {
         echo "$instance_id"
         return 0
       fi
-      log "FAILED ${instance_type} in ${region}/${subnet_id}: $(cat "$launch_err_file")"
+      local launch_err
+      launch_err=$(cat "$launch_err_file")
+      if grep -qE "Unsupported|InvalidAMIID\.NotFound" "$launch_err_file"; then
+        warn "${instance_type} not available in ${region}/${subnet_id} (skipping): ${launch_err}"
+      else
+        log "FAILED ${instance_type} in ${region}/${subnet_id}: ${launch_err}"
+      fi
       instance_id=""
     done
   done
