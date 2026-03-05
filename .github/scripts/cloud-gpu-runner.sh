@@ -254,6 +254,7 @@ aws_try_region() {
 
   log "=== Trying region: ${region} ==="
   export AWS_DEFAULT_REGION="$region"
+  export AWS_REGION="$region"
 
   local ami_id subnets sg_id
   ami_id=$(aws_resolve_ami) || { log "Skipping ${region}: failed to resolve AMI"; return 1; }
@@ -298,7 +299,7 @@ aws_try_region() {
       fi
       local launch_err
       launch_err=$(cat "$launch_err_file")
-      if grep -qE "Unsupported|InvalidAMIID\.NotFound|InsufficientInstanceCapacity" "$launch_err_file"; then
+      if grep -qE "Unsupported|InvalidAMIID\.NotFound|InsufficientInstanceCapacity|InvalidSubnetID\.NotFound" "$launch_err_file"; then
         warn "${instance_type} not available in ${region}/${subnet_id} (skipping): $(echo "${launch_err}" | tr '\n' ' ')"
       else
         log "FAILED ${instance_type} in ${region}/${subnet_id}: ${launch_err}"
