@@ -298,8 +298,8 @@ aws_try_region() {
       fi
       local launch_err
       launch_err=$(cat "$launch_err_file")
-      if grep -qE "Unsupported|InvalidAMIID\.NotFound" "$launch_err_file"; then
-        warn "${instance_type} not available in ${region}/${subnet_id} (skipping): ${launch_err}"
+      if grep -qE "Unsupported|InvalidAMIID\.NotFound|InsufficientInstanceCapacity" "$launch_err_file"; then
+        warn "${instance_type} not available in ${region}/${subnet_id} (skipping): $(echo "${launch_err}" | tr '\n' ' ')"
       else
         log "FAILED ${instance_type} in ${region}/${subnet_id}: ${launch_err}"
       fi
