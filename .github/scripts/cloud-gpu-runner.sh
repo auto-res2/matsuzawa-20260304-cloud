@@ -299,8 +299,8 @@ aws_try_region() {
       fi
       local launch_err
       launch_err=$(cat "$launch_err_file")
-      if grep -q "VcpuLimitExceeded" "$launch_err_file"; then
-        warn "${region}: vCPU limit exceeded for ${instance_type} (skipping region): $(echo "${launch_err}" | tr '\n' ' ')"
+      if grep -qE "VcpuLimitExceeded|PendingVerification" "$launch_err_file"; then
+        warn "${region}: cannot launch ${instance_type} (skipping region): $(echo "${launch_err}" | tr '\n' ' ')"
         rm -f "$launch_err_file"
         return 1
       elif grep -qE "Unsupported|InvalidAMIID\.NotFound|InsufficientInstanceCapacity|InvalidSubnetID\.NotFound" "$launch_err_file"; then
