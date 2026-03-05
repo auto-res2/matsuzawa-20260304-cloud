@@ -50,7 +50,9 @@ log() {
 }
 
 warn() {
-  echo "::warning::$(date -u '+%Y-%m-%d %H:%M:%S UTC') [cloud-gpu-runner] $*"
+  local msg="$(date -u '+%Y-%m-%d %H:%M:%S UTC') [cloud-gpu-runner] WARNING: $*"
+  echo "::warning::${msg}"
+  echo "${msg}" >&2
 }
 
 get_runner_version() {
@@ -300,12 +302,15 @@ aws_try_region() {
       local launch_err
       launch_err=$(cat "$launch_err_file")
       if grep -qE "VcpuLimitExceeded|PendingVerification" "$launch_err_file"; then
-        warn "${region}: cannot launch ${instance_type} (skipping region): $(echo "${launch_err}" | tr '\n' ' ')"
+        _REGION_FAIL_REASON=$(grep -oE "VcpuLimitExceeded|PendingVerification" "$launch_err_file" | head -1)
+        warn "${region}: ${_REGION_FAIL_REASON} (skipping region)"
         rm -f "$launch_err_file"
         return 1
       elif grep -qE "Unsupported|InvalidAMIID\.NotFound|InsufficientInstanceCapacity|InvalidSubnetID\.NotFound" "$launch_err_file"; then
-        warn "${instance_type} not available in ${region}/${subnet_id} (skipping): $(echo "${launch_err}" | tr '\n' ' ')"
+        _REGION_FAIL_REASON="InsufficientInstanceCapacity"
+        warn "${instance_type} not available in ${region}/${subnet_id} (skipping)"
       else
+        _REGION_FAIL_REASON="UnknownError"
         log "FAILED ${instance_type} in ${region}/${subnet_id}: ${launch_err}"
       fi
       instance_id=""
@@ -352,16 +357,19 @@ aws_start() {
   local instance_id=""
   local launched_region=""
   _LAUNCHED_INSTANCE_ID=""
+  local region_summary=""
   for region in "${region_list[@]}"; do
+    _REGION_FAIL_REASON=""
     if aws_try_region "$region" "${type_list[@]}"; then
       instance_id="$_LAUNCHED_INSTANCE_ID"
       launched_region="$region"
       break
     fi
+    region_summary+=" ${region}:${_REGION_FAIL_REASON:-Unknown}"
   done
 
   if [[ -z "$instance_id" ]]; then
-    log "ERROR: Failed to launch EC2 instance (tried all types, AZs, and regions)"
+    log "ERROR: Failed to launch EC2 instance. Region summary:${region_summary}"
     return 1
   fi
 
