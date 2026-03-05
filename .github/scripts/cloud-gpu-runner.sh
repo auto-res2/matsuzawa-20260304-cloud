@@ -88,6 +88,7 @@ generate_user_data() {
   cat <<USERDATA
 #!/bin/bash
 set -e
+set +x
 exec > /var/log/runner-setup.log 2>&1
 echo "=== Runner setup started at \$(date -u) ==="
 
@@ -102,9 +103,8 @@ rm runner.tar.gz
 ./bin/installdependencies.sh
 
 chown -R runner:runner "\$RUNNER_DIR"
-sudo -u runner ./config.sh \\
+sudo -u runner env ACTIONS_RUNNER_INPUT_TOKEN="${reg_token}" ./config.sh \\
   --url "https://github.com/${GITHUB_REPOSITORY}" \\
-  --token "${reg_token}" \\
   --name "${RUNNER_NAME}" \\
   --labels "${RUNNER_LABEL}" \\
   --unattended \\
@@ -280,6 +280,7 @@ aws_try_region() {
         --security-group-ids "${sg_id}" \
         --user-data "$user_data" \
         --instance-initiated-shutdown-behavior terminate \
+        --metadata-options "HttpTokens=required,HttpEndpoint=enabled" \
         ${iam_flag} \
         --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${RUNNER_NAME}},{Key=github-actions,Value=true},{Key=github-run-id,Value=${GITHUB_RUN_ID:-unknown}}]" \
         --query 'Instances[0].InstanceId' \
